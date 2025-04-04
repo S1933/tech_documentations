@@ -1,0 +1,31 @@
+name: Update README
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Generate File List
+        run: |
+          echo "# Project Files" > README.md
+          echo "" >> README.md
+          echo "## 📂 List of Files" >> README.md
+          echo "" >> README.md
+          find . -type f ! -path "./.git/*" ! -path "./.github/*" ! -path "./README.md" | sed 's|^./|- |' >> README.md
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "🔄 Auto-update README with file list" || echo "No changes to commit"
+          git push
