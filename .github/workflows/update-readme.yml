@@ -1,10 +1,13 @@
-name: Update README
+name: Update README with File List
 
 on:
   push:
     branches:
       - main
   workflow_dispatch: # Allows manual triggering
+
+permissions:
+  contents: write  # ✅ Grants write permission to push changes
 
 jobs:
   update-readme:
@@ -14,18 +17,23 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Generate File List
+      - name: Generate File List with Links
         run: |
+          REPO_URL="https://github.com/${{ github.repository }}/blob/main"
           echo "# Project Files" > README.md
           echo "" >> README.md
           echo "## 📂 List of Files" >> README.md
           echo "" >> README.md
-          find . -type f ! -path "./.git/*" ! -path "./.github/*" ! -path "./README.md" | sed 's|^./|- |' >> README.md
+          find . -type f ! -path "./.git/*" ! -path "./.github/*" ! -path "./README.md" | while read file; do
+            echo "- [$(basename "$file")]($REPO_URL/${file#./})" >> README.md
+          done
 
       - name: Commit and Push Changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # ✅ Use GitHub Token
         run: |
-          git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
           git add README.md
-          git commit -m "🔄 Auto-update README with file list" || echo "No changes to commit"
-          git push
+          git commit -m "🔄 Auto-update README with file list and links" || exit 0
+          git push origin main
